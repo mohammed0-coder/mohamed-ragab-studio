@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { CTA, PageIntro } from "@/components/site";
+import { PageIntro } from "@/components/site";
 import { T } from "@/components/language";
 
 export const metadata: Metadata = { title: "من نحن", description: "استوديو إبداعي مستقل في القاهرة." };
@@ -22,6 +22,6 @@ export default function About() {
       <div className="about-block"><div className="eyebrow"><T ar="03 / ما نؤمن به" en="03 / What we believe" /></div><div><h2><T ar="الفضول، الشجاعة، والمسؤولية." en="Curiosity, courage, and care." /></h2><p><T ar="نظل فضوليين تجاه الناس والثقافة والتقنية. نختار الأفكار الشجاعة، ونفكر في أثر ما نصنعه. هكذا نبني علاقات عمل طويلة وأعمالًا نشعر بالفخر بها." en="We stay curious about people, culture, and technology. We choose brave ideas and think about their impact. That is how we build lasting relationships and work we are proud of." /></p></div></div>
       <div className="team-section"><div className="section-head"><div><div className="eyebrow"><T ar="04 / الأشخاص" en="04 / The people" /></div><h2><T ar="فريق يصنع الفكرة." en="The people behind the ideas." /></h2></div></div><div className="team-grid">{team.map((person) => <article className="team-card" key={person.role}><Image src="/images/image-placeholder.svg" alt="" width={1200} height={760} className="team-photo" /><div className="team-card-copy"><span className="team-role"><T ar={person.role} en={person.enRole} /></span><h3><T ar={person.name} en={person.enName} /></h3><p><T ar={person.bio} en={person.enBio} /></p></div></article>)}</div></div>
     </section>
-    <CTA />
+    
   </>;
 }

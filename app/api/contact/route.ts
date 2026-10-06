@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 const requestWindows = new Map<string, { count: number; until: number }>();
 
@@ -21,6 +22,21 @@ export async function POST(request: Request) {
     const message = typeof body.message === "string" ? body.message.trim().slice(0, 5000) : "";
     if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || message.length < 10) {
       return NextResponse.json({ error: "تحقق من الحقول المطلوبة وحاول مرة أخرى." }, { status: 400 });
+    }
+
+    const db = createPublicClient();
+    if (db) {
+      const { error: saveError } = await db.from("contact_messages").insert({
+        name,
+        email,
+        phone: String(body.phone || "").slice(0, 40),
+        company: String(body.company || "").slice(0, 120),
+        job_title: String(body.job_title || "").slice(0, 120),
+        project_type: String(body.project_type || "").slice(0, 120),
+        message,
+        status: "new",
+      });
+      if (saveError) console.error("[contact] save message", saveError.message);
     }
 
     const accessKey = process.env.WEB3FORMS_ACCESS_KEY?.trim();

@@ -1,3 +1,5 @@
-import type {Metadata} from "next";import {getProjects} from "@/lib/content";import {CTA,PageIntro} from "@/components/site";import {ProjectList} from "@/components/project-list";
+import type {Metadata} from "next";import {getProjects} from "@/lib/content";import {PageIntro} from "@/components/site";import {ProjectList} from "@/components/project-list";
+export const dynamic = "force-dynamic";
+
 export const metadata:Metadata={title:"المشاريع",description:"مجموعة من العلامات والحملات والتجارب الرقمية التي صنعناها."};
-export default async function ProjectsPage(){const projects=await getProjects();return <><PageIntro kicker="مختارات من أعمالنا" title="أثرٌ وراء كل فكرة." description="نؤمن أن العمل الجيد لا يحتاج إلى شرح طويل. تصفح ما صنعناه مع شركائنا." english={{kicker:"Selected work",title:"Impact behind every idea.",description:"Good work needs little explanation. Explore what we’ve made with our partners."}}/><section className="content-wrap page-section" id="content"><ProjectList projects={projects}/></section><CTA/></>}
+export default async function ProjectsPage(){const projects=await getProjects();return <><PageIntro kicker="مختارات من أعمالنا" title="أثرٌ وراء كل فكرة." description="نؤمن أن العمل الجيد لا يحتاج إلى شرح طويل. تصفح ما صنعناه مع شركائنا." english={{kicker:"Selected work",title:"Impact behind every idea.",description:"Good work needs little explanation. Explore what we’ve made with our partners."}}/><section className="content-wrap page-section" id="content"><ProjectList projects={projects}/></section></>}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" fill="none">
+  <rect width="1200" height="760" fill="#d9d8d1"/>
+  <circle cx="600" cy="315" r="105" fill="#b5b4ad"/>
+  <path d="M345 690c18-139 114-220 255-220s237 81 255 220" fill="#b5b4ad"/>
+  <path d="M94 94h1012v572H94z" stroke="#85857f" stroke-width="2" stroke-dasharray="12 14"/>
+  <text x="600" y="730" text-anchor="middle" fill="#555650" font-family="Arial,sans-serif" font-size="24">IMAGE PLACEHOLDER</text>
+</svg>

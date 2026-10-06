@@ -6,6 +6,7 @@ export type Project = {
   challenge?: string | null; solution?: string | null; results?: string | null; external_url?: string | null;
   featured?: boolean; homepage_featured?: boolean; published?: boolean; sort_order?: number;
   gallery_images?: { url: string; alt: string }[];
+  theme?: string | null;
 };
 export type Client = { id: string; name: string; logo_url?: string | null; website_url?: string | null; sort_order?: number; visible?: boolean };
 export type Service = { id: string; number: string; title: string; description: string; items: string[]; sort_order?: number; visible?: boolean };

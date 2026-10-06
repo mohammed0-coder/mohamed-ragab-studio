@@ -48,11 +48,12 @@ export function GsapScrollAnimator() {
     const items = Array.from(document.querySelectorAll<HTMLElement>(".section-head, .service-row, .client-mark, .about-block, .team-card, .numbered-service, .contact-info, .contact-layout > div, .project-info, .editorial-copy, .project-nav"));
     if (!items.length) return;
     const observers: IntersectionObserver[] = [];
+    const mobile = window.matchMedia("(max-width: 800px)").matches;
     items.forEach((item, index) => {
-      gsap.set(item, { opacity: 0, y: 28 });
+      gsap.set(item, { opacity: 0, y: mobile ? 14 : 28 });
       const observer = new IntersectionObserver(([entry]) => {
         if (!entry.isIntersecting) return;
-        gsap.to(item, { opacity: 1, y: 0, duration: .72, delay: (index % 5) * .035, ease: "power3.out", overwrite: true });
+        gsap.to(item, { opacity: 1, y: 0, duration: mobile ? .52 : .72, delay: (index % 5) * (mobile ? .02 : .035), ease: "power3.out", overwrite: true });
         observer.disconnect();
       }, { threshold: .12 });
       observer.observe(item);

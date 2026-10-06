@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.env*
+!.env.example
+out/
+*.log
+env.local
+*.zip
+*.backup.*
+tsconfig.tsbuildinfo
+mohamed-ragab-ui-recovery-patch/
+components/site.encoding-backup.tsx
+??????/
+?????? ??????/
+
+الخطوط/
+خلفيات الموقع/

@@ -27,6 +27,7 @@ export function ProjectShowcase({ projects }: { projects: Project[] }) {
     ><Link
       href={`/projects/${project.slug}`}
       className="showcase-link"
+      data-cursor-type="project"
       onMouseEnter={() => setActive(index)}
       onFocus={() => setActive(index)}
       onClick={(event) => { event.preventDefault(); if (opening) return; setActive(index); setOpening(project.slug); window.setTimeout(() => router.push(`/projects/${project.slug}`), 480); }}

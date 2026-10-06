@@ -43,9 +43,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     : Array.from(new Set([project.cover_image, project.hero_image].filter((image): image is string => Boolean(image)))).map((url) => ({ url, alt: "" }));
 
   const projectUrl = `/projects/${project.slug}`;
+  const themeClass = ({wine:"project-theme-wine",olive:"project-theme-olive",blue:"project-theme-blue",sand:"project-theme-sand",lilac:"project-theme-lilac",ink:"project-theme-ink",coral:"project-theme-coral"} as Record<string,string>)[project.theme || ""] || "project-theme-auto";
 
   return <>
-    <div className="acadio-project-wrapper">
+    <div className={`acadio-project-wrapper ${themeClass}`}>
       <section className="acadio-project-hero">
         <h1 className="acadio-project-title"><ContentText ar={project.title} /></h1>
         
@@ -101,7 +102,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <ProjectGallery images={galleryImages} projectTitle={project.title} />
         </section>}
 
-        <div className="project-nav acadio-project-nav"><Link href="/projects">← <T ar="جميع المشاريع" en="All projects" /></Link>{all.length > 1 && <Link href={`/projects/${all[(index + 1) % all.length].slug}`}><T ar="المشروع التالي:" en="Next project:" /> <ContentText ar={all[(index + 1) % all.length].title} /> ↙</Link>}</div>
+        <nav className="project-nav acadio-project-nav"><Link className="project-nav-prev" href="/projects">← <T ar="جميع المشاريع" en="All projects" /></Link>{all.length > 1 && <Link className="project-nav-next" href={`/projects/${all[(index + 1) % all.length].slug}`}><T ar="المشروع التالي:" en="Next project:" /> <ContentText ar={all[(index + 1) % all.length].title} /> ↙</Link>}</nav>
       </section>
     </div>
     <CTA />

@@ -14,6 +14,9 @@ async function adminClient(){const db=await createClient();if(!db)return null;co
 export async function saveProject(formData:FormData):Promise<void>{
  const db=await adminClient();if(!db)redirect("/admin");
  const id=String(formData.get("id")||""),title=String(formData.get("title")||"").trim(),slug=String(formData.get("slug")||"").trim().toLowerCase().replace(/[^a-z0-9-]/g,"-");
+ const themeValue=String(formData.get("theme")||"auto");
+ const allowedThemes=["auto","wine","olive","blue","sand","lilac","ink","coral"];
+ const theme=allowedThemes.includes(themeValue)?themeValue:"auto";
  if(title.length<2||slug.length<2)redirect("/admin/dashboard?error=invalid-project");
  const row:Partial<Project>={title,slug,client_name:String(formData.get("client_name")||""),category:String(formData.get("category")||""),short_description:String(formData.get("short_description")||""),description:String(formData.get("description")||"")||null,intro_title:String(formData.get("intro_title")||"")||null,intro_text:String(formData.get("intro_text")||"")||null,challenge:String(formData.get("challenge")||"")||null,solution:String(formData.get("solution")||"")||null,results:String(formData.get("results")||"")||null,start_date:String(formData.get("start_date")||"")||null,end_date:String(formData.get("end_date")||"")||null,cover_image:String(formData.get("cover_image")||"")||null,hero_image:String(formData.get("hero_image")||"")||null,services:String(formData.get("services")||"").split(",").map(x=>x.trim()).filter(Boolean),published:formData.get("published")==="on",featured:formData.get("featured")==="on",homepage_featured:formData.get("homepage_featured")==="on",sort_order:Number(formData.get("sort_order")||0)};
  let projectId=id;
@@ -25,6 +28,8 @@ export async function saveProject(formData:FormData):Promise<void>{
   if(deleteError)redirect("/admin/dashboard?error=save-gallery");
   if(images.length){const {error}=await db.from("project_images").insert(images.map((image_url,sort_order)=>({project_id:projectId,image_url,alt_text:title,sort_order})));if(error)redirect("/admin/dashboard?error=save-gallery");}
  }
+ const {error:themeError}=await db.from("site_settings").upsert({key:`project_theme:${slug}`,value:{text:theme},updated_at:new Date().toISOString()});
+ if(themeError)redirect("/admin/dashboard?error=save-theme");
  redirect("/admin/dashboard?status=project-saved");
 }
 export async function saveClient(formData:FormData){const db=await adminClient();if(!db)return;const id=String(formData.get("id")||""),row={name:String(formData.get("name")||"").trim(),website_url:String(formData.get("website_url")||"").trim()||null,logo_url:String(formData.get("logo_url")||"").trim()||null,visible:formData.get("visible")==="on",sort_order:Number(formData.get("sort_order")||0)};if(!row.name)return;if(id)await db.from("clients").update(row).eq("id",id);else await db.from("clients").insert(row);}

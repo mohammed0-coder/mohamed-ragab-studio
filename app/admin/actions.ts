@@ -38,11 +38,16 @@ function revalidateSite(slug?: string) {
 }
 
 export async function saveProject(formData: FormData): Promise<void> {
+  const PROJECT_THEMES = ["olive", "blue", "red", "sand", "ink", "lilac"] as const;
   const db = await adminClient();
   if (!db) redirect("/admin");
   const id = String(formData.get("id") || "");
   const title = String(formData.get("title") || "").trim();
   const slug = String(formData.get("slug") || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const requestedTheme = String(formData.get("theme") || "red");
+  const theme = PROJECT_THEMES.includes(requestedTheme as (typeof PROJECT_THEMES)[number]) ? requestedTheme : "red";
+  const introTextAr = String(formData.get("intro_text_ar") || "").trim() || null;
+  const introTextEn = String(formData.get("intro_text_en") || "").trim() || null;
   if (title.length < 2 || slug.length < 2) redirect("/admin/dashboard?error=invalid-project");
 
   const row: Partial<Project> = {
@@ -53,7 +58,9 @@ export async function saveProject(formData: FormData): Promise<void> {
     short_description: String(formData.get("short_description") || ""),
     description: String(formData.get("description") || "") || null,
     intro_title: String(formData.get("intro_title") || "") || null,
-    intro_text: String(formData.get("intro_text") || "") || null,
+    intro_text: introTextAr || introTextEn || null,
+    intro_text_ar: introTextAr,
+    intro_text_en: introTextEn,
     challenge: String(formData.get("challenge") || "") || null,
     solution: String(formData.get("solution") || "") || null,
     results: String(formData.get("results") || "") || null,
@@ -65,6 +72,7 @@ export async function saveProject(formData: FormData): Promise<void> {
     published: id ? formData.get("published") === "on" : true,
     featured: formData.get("featured") === "on",
     homepage_featured: formData.get("homepage_featured") === "on",
+    theme,
     sort_order: Number(formData.get("sort_order") || 0),
   };
 

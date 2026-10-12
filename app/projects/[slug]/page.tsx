@@ -25,11 +25,6 @@ function ProjectCover({ project, className = "" }: { project: Project; className
     : <div className={`project-art art-red ${className}`}><div className="art-top"><span><ContentText ar={project.client_name} /></span><span><T ar="عمل مختار" en="Selected work" /></span></div><div className="art-shape shape-one" /><div className="art-shape shape-two" /><div className="art-word" dir="rtl"><ContentText ar={project.title} /></div><div className="art-caption"><ContentText ar={project.category} /></div></div>;
 }
 
-const placeholderText = {
-  ar: "يمثل هذا المشروع واحدًا من أهم الأعمال التي قمنا بتنفيذها، حيث جمعنا بين الإبداع والتخطيط الاستراتيجي لتحقيق نتائج استثنائية. بدأت الرحلة بفهم عميق لاحتياجات العميل ورؤيته، ثم عملنا على تطوير هوية بصرية قوية تعكس قيم المشروع وتخاطب الجمهور المستهدف بلغة مؤثرة. من خلال فريق عمل متخصص ومنهجية عمل مدروسة، استطعنا تحويل التحديات إلى فرص وصنع تجربة متكاملة تترك أثرًا واضحًا.",
-  en: "This project represents one of the most significant works we have executed, combining creativity with strategic planning to achieve exceptional results. The journey began with a deep understanding of the client's needs and vision, followed by developing a strong visual identity that reflects the project's values and speaks to the target audience in an impactful way. Through a specialized team and a well-considered methodology, we were able to turn challenges into opportunities and create a comprehensive experience that leaves a lasting impact."
-};
-
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = await getProject(slug);
@@ -43,7 +38,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const projectUrl = `/projects/${project.slug}`;
 
   return <>
-    <div className="acadio-project-wrapper">
+    <div className="acadio-project-wrapper" data-project-theme={project.theme || "red"}>
       <section className="acadio-project-hero">
         <h1 className="acadio-project-title"><ContentText ar={project.title} /></h1>
         
@@ -74,7 +69,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
           <div className="project-intro-right">
             <p className="project-description-large">
-              <ContentText ar={(project.intro_text || project.description) || placeholderText.ar} en={placeholderText.en} />
+              <ContentText ar={project.intro_text_ar || project.intro_text || project.description || project.short_description} en={project.intro_text_en || project.description || project.short_description} />
             </p>
 
             {project.challenge && <>

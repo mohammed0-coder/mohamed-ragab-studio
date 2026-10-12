@@ -784,3 +784,164 @@ html[data-language=en] .acadio-hero h1{text-align:left;direction:ltr}
 .acadio-project-title,.acadio-scroll-explore,.acadio-hero-share,.acadio-hero-share a,.acadio-project-nav,.acadio-project-nav a{color:var(--project-fg)}
 .acadio-project-content{background-color:var(--project-bg)}
 .acadio-hr,.acadio-project-nav{border-color:color-mix(in srgb,var(--project-fg) 28%,transparent)}
+
+/* ===== V8 MOBILE CAROUSEL + ADMIN UX ===== */
+.project-gallery-track{
+  display:flex!important;
+  align-items:center!important;
+  gap:clamp(18px,2.8vw,42px)!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding:0 0 16px!important;
+  scroll-snap-type:x mandatory!important;
+  scroll-behavior:smooth!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+  cursor:grab!important;
+  touch-action:pan-y!important;
+  overscroll-behavior-inline:contain!important;
+}
+.project-gallery-track::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.project-gallery-track.is-dragging{cursor:grabbing!important;scroll-behavior:auto!important;user-select:none!important}
+.project-gallery-acadio .project-gallery-track{gap:clamp(20px,3vw,44px)!important;padding-bottom:8px!important}
+.project-gallery-acadio img{
+  flex:0 0 auto!important;
+  width:auto!important;
+  height:min(68svh,720px)!important;
+  max-width:none!important;
+  max-height:68svh!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:transparent!important;
+  scroll-snap-align:center!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.acadio-project-nav{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:24px!important;
+  align-items:center!important;
+  direction:ltr!important;
+}
+.acadio-project-nav a:first-child{justify-self:start!important;text-align:left!important;direction:rtl}
+.acadio-project-nav a:last-child{justify-self:end!important;text-align:right!important;direction:rtl}
+
+/* Four Key Visual cards: always visible on phones, never horizontally scrollable. */
+@media(max-width:700px){
+  .project-showcase{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:clamp(150px,42vw,235px)!important;
+    gap:10px!important;
+    width:100%!important;
+    height:auto!important;
+    overflow:visible!important;
+    padding:0!important;
+    scroll-snap-type:none!important;
+  }
+  .project-showcase .showcase-card,
+  .project-showcase .showcase-card.is-active{
+    width:auto!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    flex:none!important;
+    flex-grow:0!important;
+    transform:none!important;
+  }
+  .project-showcase .showcase-link{padding:14px!important}
+  .project-showcase .showcase-name{font-size:clamp(15px,4.2vw,20px)!important}
+  .project-showcase .showcase-category{font-size:9px!important}
+  .project-showcase .showcase-arrow{width:28px!important;height:28px!important}
+}
+
+/* Simple, calm admin UI — intentionally separate from the editorial public site. */
+.admin-dashboard-shell{
+  background:#f3f1eb!important;
+  color:#22231f!important;
+}
+.admin-sidebar{
+  background:#fbfaf7!important;
+  border-inline-end:1px solid rgba(30,31,27,.08)!important;
+}
+.admin-main{background:#f3f1eb!important;padding-bottom:42px}
+.admin-topbar{
+  background:rgba(251,250,247,.94)!important;
+  border-bottom:1px solid rgba(30,31,27,.08)!important;
+  box-shadow:0 8px 28px rgba(30,31,27,.05)!important;
+}
+.admin-panel-section{
+  margin:18px clamp(14px,2.4vw,32px)!important;
+  padding:24px clamp(16px,2.7vw,34px)!important;
+  background:#fbfaf7!important;
+  border:1px solid rgba(30,31,27,.08)!important;
+  border-radius:18px!important;
+  box-shadow:0 8px 30px rgba(30,31,27,.05)!important;
+}
+.admin-overview{margin:0 18px 18px!important;border:0!important;border-radius:18px!important;overflow:hidden!important;gap:1px!important;background:rgba(30,31,27,.08)!important}
+.admin-overview>div{background:#fbfaf7!important;padding:20px!important}
+.admin-quick-grid{margin:0 18px 18px!important;border:1px solid rgba(30,31,27,.08)!important;border-radius:18px!important;overflow:hidden!important;background:rgba(30,31,27,.08)!important}
+.admin-quick-grid a{background:#fbfaf7!important;min-height:88px!important}
+.admin-editor{background:#fffefa!important;border:1px solid rgba(30,31,27,.08)!important;border-radius:14px!important;margin:0 0 10px!important;padding-inline:16px!important;box-shadow:0 5px 18px rgba(30,31,27,.035)!important}
+.admin-editor>summary{padding-block:16px!important}
+.admin-form input,.admin-form textarea,.admin-form select{
+  background:#fff!important;
+  color:#242520!important;
+  border:1px solid rgba(30,31,27,.12)!important;
+  border-radius:10px!important;
+  padding:11px 12px!important;
+}
+.admin-form input:focus,.admin-form textarea:focus,.admin-form select:focus{
+  outline:0!important;
+  border-color:#9aa765!important;
+  box-shadow:0 0 0 3px rgba(154,167,101,.13)!important;
+}
+.admin-form .admin-field-label{color:#363832!important}
+.admin-theme-option{background:#fff!important;border-radius:10px!important}
+.admin-button{border-radius:10px!important;padding:11px 16px!important;background:#242520!important}
+.admin-secondary{background:#fff!important}
+.admin-upload-group{background:#f7f5f0!important;border:1px solid rgba(30,31,27,.08)!important;border-radius:12px!important;padding:16px!important}
+.admin-message-card{background:#fffefa!important;border:1px solid rgba(30,31,27,.08)!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(30,31,27,.03)!important}
+.admin-security-note{border-radius:12px!important}
+
+@media(max-width:900px){
+  .admin-dashboard-shell{grid-template-columns:1fr!important}
+  .admin-sidebar{position:sticky!important;top:0!important;height:auto!important;border-inline-end:0!important;border-bottom:1px solid rgba(30,31,27,.08)!important;padding:12px!important}
+  .admin-sidebar-brand{display:flex!important;justify-content:space-between!important;padding:4px!important}
+  .admin-sidebar nav{display:flex!important;gap:8px!important;margin-top:12px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;padding-bottom:3px!important}
+  .admin-sidebar nav::-webkit-scrollbar{display:none!important}
+  .admin-sidebar nav a{flex:0 0 auto!important;min-width:max-content!important;border:1px solid rgba(30,31,27,.08)!important;border-inline-start:1px solid rgba(30,31,27,.08)!important;border-radius:999px!important;background:#fffefa!important;padding:9px 13px!important}
+  .admin-sidebar nav a.is-active{padding-inline-start:13px!important;background:#242520!important;color:#fff!important;border-color:#242520!important}
+  .admin-sidebar-bottom{display:flex!important;gap:8px!important;justify-content:space-between!important;border-top:0!important;padding-top:10px!important}
+  .admin-main{padding-bottom:24px!important}
+  .admin-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;margin-inline:14px!important}
+  .admin-overview{grid-template-columns:repeat(2,minmax(0,1fr))!important;margin-inline:14px!important}
+  .admin-panel-section{margin-inline:14px!important;padding:18px 16px!important}
+}
+@media(max-width:600px){
+  .project-gallery-acadio{margin:55px 0!important}
+  .project-gallery-acadio img{height:min(62svh,540px)!important;max-height:62svh!important}
+  .acadio-project-nav{grid-template-columns:1fr!important;gap:18px!important}
+  .acadio-project-nav a:first-child,.acadio-project-nav a:last-child{justify-self:stretch!important;text-align:initial!important}
+  .acadio-project-nav a:first-child{order:1}
+  .acadio-project-nav a:last-child{order:2}
+  .admin-topbar{padding:16px 14px!important}
+  .admin-topbar h1{font-size:22px!important}
+  .admin-overview{margin-inline:14px!important}
+  .admin-overview>div{padding:15px!important}
+  .admin-overview strong{font-size:26px!important}
+  .admin-quick-grid{margin-inline:14px!important}
+  .admin-quick-grid a{min-height:78px!important;padding:14px!important}
+  .admin-form{grid-template-columns:1fr!important;gap:14px!important}
+  .admin-form .admin-field{grid-column:1!important}
+  .admin-editor{padding-inline:12px!important}
+  .admin-section-heading{align-items:flex-start!important;flex-direction:column!important}
+}
+@media(max-width:600px){
+  .acadio-project-nav{grid-template-columns:1fr 1fr!important;gap:12px!important}
+  .acadio-project-nav a:first-child,.acadio-project-nav a:last-child{justify-self:stretch!important}
+  .acadio-project-nav a:first-child{text-align:left!important}
+  .acadio-project-nav a:last-child{text-align:right!important}
+}

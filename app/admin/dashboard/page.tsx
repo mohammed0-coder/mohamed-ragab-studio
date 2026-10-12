@@ -9,6 +9,7 @@ import { AdminOnboarding } from "@/components/admin-onboarding";
 import { AdminFlash } from "@/components/admin-flash";
 import { PUBLIC_SETTING_KEYS, getSiteSettings } from "@/lib/site-settings";
 import { getAnalyticsSummary, type AnalyticsPeriod } from "@/lib/analytics";
+import { PROJECT_CATEGORIES } from "@/lib/project-categories";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,14 @@ function Field({ label, hint, children, className = "" }: { label: string; hint?
   return <label className={`admin-field ${className}`}><span className="admin-field-label">{label}</span>{hint && <small className="admin-field-hint">{hint}</small>}{children}</label>;
 }
 
+function CategorySelect({ value, required = false }: { value?: string; required?: boolean }) {
+  const current = value || "Advertising";
+  const isKnown = PROJECT_CATEGORIES.includes(current as (typeof PROJECT_CATEGORIES)[number]);
+  return <select name="category" defaultValue={isKnown ? current : "Other"} required={required}>
+    {PROJECT_CATEGORIES.map((category) => <option value={category} key={category}>{category}</option>)}
+  </select>;
+}
+
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ analytics?: string; section?: string }> }) {
   const db = await createClient();
   if (!db) redirect("/admin");
@@ -53,28 +62,63 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const requestedSection = String(params.section || "overview");
   const activeSection = allowedSections.includes(requestedSection) ? requestedSection : "overview";
 
-  const [pr, cl, sr, mr, settings, gr, analytics] = await Promise.all([
-    db.from("projects").select("*").order("sort_order").order("created_at", { ascending: false }),
-    db.from("clients").select("*").order("sort_order"),
-    db.from("services").select("*").order("sort_order"),
-    db.from("contact_messages").select("*").order("created_at", { ascending: false }),
-    getSiteSettings(),
-    db.from("project_images").select("project_id,image_url").order("sort_order"),
-    getAnalyticsSummary(period),
-  ]);
+  let projects: Project[] = [];
+  let clients: Client[] = [];
+  let services: Service[] = [];
+  let messages: ContactMessage[] = [];
+  let settings: Record<string, string> = {};
+  let analytics: Awaited<ReturnType<typeof getAnalyticsSummary>> = null;
+  let totalProjects = 0;
+  let published = 0;
+  let homepageFeatured = 0;
+  let newMessages = 0;
+  let totalClients = 0;
+  let totalServices = 0;
+  const galleryTextMap = new Map<string, string[]>();
 
-  const projects = (pr.data || []) as Project[];
-  const clients = (cl.data || []) as Client[];
-  const services = (sr.data || []) as Service[];
-  const messages = (mr.data || []) as ContactMessage[];
-  const galleryByProject = new Map<string, string[]>();
-  for (const image of (gr.data || []) as { project_id: string; image_url: string }[]) {
-    galleryByProject.set(image.project_id, [...(galleryByProject.get(image.project_id) || []), image.image_url]);
+  if (activeSection === "overview") {
+    const [projectTotal, projectPublished, projectFeatured, clientCount, serviceCount, newMessageCount] = await Promise.all([
+      db.from("projects").select("id", { count: "exact", head: true }),
+      db.from("projects").select("id", { count: "exact", head: true }).eq("published", true),
+      db.from("projects").select("id", { count: "exact", head: true }).eq("published", true).eq("homepage_featured", true),
+      db.from("clients").select("id", { count: "exact", head: true }),
+      db.from("services").select("id", { count: "exact", head: true }).eq("visible", true),
+      db.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "new"),
+    ]);
+    totalProjects = projectTotal.count || 0;
+    published = projectPublished.count || 0;
+    homepageFeatured = projectFeatured.count || 0;
+    totalClients = clientCount.count || 0;
+    totalServices = serviceCount.count || 0;
+    newMessages = newMessageCount.count || 0;
+  } else if (activeSection === "analytics") {
+    analytics = await getAnalyticsSummary(period);
+  } else if (activeSection === "projects") {
+    const [pr, gr] = await Promise.all([
+      db.from("projects").select("*").order("sort_order").order("created_at", { ascending: false }),
+      db.from("project_images").select("project_id,image_url").order("sort_order"),
+    ]);
+    projects = (pr.data || []) as Project[];
+    const galleryByProject = new Map<string, string[]>();
+    for (const image of (gr.data || []) as { project_id: string; image_url: string }[]) {
+      galleryByProject.set(image.project_id, [...(galleryByProject.get(image.project_id) || []), image.image_url]);
+    }
+    for (const [projectId, images] of galleryByProject) galleryTextMap.set(projectId, images);
+  } else if (activeSection === "clients") {
+    const { data } = await db.from("clients").select("*").order("sort_order");
+    clients = (data || []) as Client[];
+  } else if (activeSection === "services") {
+    const { data } = await db.from("services").select("*").order("sort_order");
+    services = (data || []) as Service[];
+  } else if (activeSection === "messages") {
+    const { data } = await db.from("contact_messages").select("*").order("created_at", { ascending: false });
+    messages = (data || []) as ContactMessage[];
+    newMessages = messages.filter((message) => message.status === "new").length;
+  } else if (activeSection === "settings") {
+    settings = await getSiteSettings();
   }
-  const galleryText = (id: string) => galleryByProject.get(id)?.join("\n") || "";
-  const newMessages = messages.filter((message) => message.status === "new").length;
-  const published = projects.filter((project) => project.published).length;
-  const homepageFeatured = projects.filter((project) => project.published && project.homepage_featured).length;
+
+  const galleryText = (id: string) => galleryTextMap.get(id)?.join("\n") || "";
 
   return <main className="admin-dashboard-shell">
     <AdminOnboarding />
@@ -97,9 +141,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </header>
 
       <section id="overview" className="admin-view-section admin-view-overview admin-overview">
-        <div><span>المشاريع</span><strong>{projects.length}</strong><small>{published} منشور</small></div>
-        <div><span>العملاء</span><strong>{clients.length}</strong><small>شريك محفوظ</small></div>
-        <div><span>الخدمات</span><strong>{services.length}</strong><small>خدمة نشطة</small></div>
+        <div><span>المشاريع</span><strong>{totalProjects}</strong><small>{published} منشور</small></div>
+        <div><span>العملاء</span><strong>{totalClients}</strong><small>شريك محفوظ</small></div>
+        <div><span>الخدمات</span><strong>{totalServices}</strong><small>خدمة نشطة</small></div>
         <div><span>رسائل جديدة</span><strong>{newMessages}</strong><small>تحتاج انتباهك</small></div><div><span>الأعمال الرئيسية</span><strong>{homepageFeatured}/4</strong><small>اختيار للواجهة الرئيسية</small></div>
       </section>
 
@@ -134,7 +178,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <Field label="عنوان المشروع" hint="الاسم الذي سيظهر للزائر."><input name="title" required /></Field>
             <Field label="الرابط المختصر" hint="حروف إنجليزية فقط، مثل nawa."><input name="slug" required /></Field>
             <Field label="اسم العميل" hint="اسم الشركة أو العميل الظاهر في بطاقة المشروع."><input name="client_name" /></Field>
-            <Field label="التصنيف" hint="مثال: Branding أو Digital أو Web."><input name="category" /></Field>
+            <Field label="التصنيف" hint="اختر تصنيفًا موحدًا لتجنب تكرار نفس التصنيف بأسماء مختلفة."><CategorySelect required /></Field>
             <Field label="الوصف المختصر"><input name="short_description" /></Field>
             <Field label="الخدمات" hint="افصل كل خدمة بفاصلة."><input name="services" /></Field>
             <Field label="الوصف الكامل" className="field-span"><textarea name="description" rows={3} /></Field>
@@ -160,7 +204,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <Field label="عنوان المشروع"><input name="title" defaultValue={project.title} /></Field>
               <Field label="الرابط المختصر"><input name="slug" defaultValue={project.slug} /></Field>
               <Field label="اسم العميل"><input name="client_name" defaultValue={project.client_name} /></Field>
-              <Field label="التصنيف"><input name="category" defaultValue={project.category} /></Field>
+              <Field label="التصنيف"><CategorySelect value={project.category} /></Field>
               <Field label="الوصف المختصر"><input name="short_description" defaultValue={project.short_description} /></Field>
               <Field label="الخدمات"><input name="services" defaultValue={project.services.join(", ")} /></Field>
               <Field label="الوصف الكامل" className="field-span"><textarea name="description" rows={3} defaultValue={project.description || ""} /></Field>

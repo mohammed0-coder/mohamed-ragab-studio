@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Project } from "@/lib/types";
 import { PUBLIC_SETTING_KEYS } from "@/lib/site-settings";
+import { PROJECT_CATEGORIES } from "@/lib/project-categories";
 
 export async function login(_state: { error?: string } | undefined, formData: FormData): Promise<{ error?: string } | undefined> {
   const db = await createClient();
@@ -44,6 +45,8 @@ export async function saveProject(formData: FormData): Promise<void> {
   const id = String(formData.get("id") || "");
   const title = String(formData.get("title") || "").trim();
   const slug = String(formData.get("slug") || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const requestedCategory = String(formData.get("category") || "Other").trim();
+  const category = PROJECT_CATEGORIES.includes(requestedCategory as (typeof PROJECT_CATEGORIES)[number]) ? requestedCategory : "Other";
   const requestedTheme = String(formData.get("theme") || "red");
   const theme = PROJECT_THEMES.includes(requestedTheme as (typeof PROJECT_THEMES)[number]) ? requestedTheme : "red";
   const introTextAr = String(formData.get("intro_text_ar") || "").trim() || null;
@@ -54,7 +57,7 @@ export async function saveProject(formData: FormData): Promise<void> {
     title,
     slug,
     client_name: String(formData.get("client_name") || ""),
-    category: String(formData.get("category") || ""),
+    category,
     short_description: String(formData.get("short_description") || ""),
     description: String(formData.get("description") || "") || null,
     intro_title: String(formData.get("intro_title") || "") || null,

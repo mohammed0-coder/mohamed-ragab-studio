@@ -138,7 +138,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <Field label="تاريخ النهاية"><input name="end_date" type="date" /></Field>
             <Field label="ترتيب العرض"><input name="sort_order" type="number" defaultValue="0" /></Field>
             <div className="admin-upload-group"><strong>صور المشروع</strong><p>ارفع صورة الغلاف، الصورة الرئيسية، ثم صور المعرض. لا تحتاج إلى نسخ روابط طويلة يدويًا.</p><label className="admin-field"><span className="admin-field-label">صورة الغلاف</span><input name="cover_image" /></label><AdminUploader fieldName="cover_image" bucket="project-images" folder="projects" /><label className="admin-field"><span className="admin-field-label">الصورة الرئيسية</span><input name="hero_image" /></label><AdminUploader fieldName="hero_image" bucket="project-images" folder="projects" /><Field label="روابط صور المعرض" hint="صورة في كل سطر." className="field-span"><textarea name="gallery_images" rows={4} id="gallery-new" /></Field><AdminGalleryUploader fieldId="gallery-new" /></div>
-            <div className="admin-checks"><label><input type="checkbox" name="published" /> منشور على الموقع</label><label><input type="checkbox" name="featured" /> مميز</label><label><input type="checkbox" name="homepage_featured" /> ضمن الأربعة الرئيسية</label></div>
+            <div className="admin-checks"><label><input type="checkbox" name="published" defaultChecked /> منشور على الموقع</label><label><input type="checkbox" name="featured" /> مميز</label><label><input type="checkbox" name="homepage_featured" /> ضمن الأربعة الرئيسية</label></div>
             <div className="admin-editor-actions"><button className="admin-button" type="submit">حفظ المشروع</button></div>
           </form>
         </details>

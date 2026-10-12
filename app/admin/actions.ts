@@ -62,7 +62,7 @@ export async function saveProject(formData: FormData): Promise<void> {
     cover_image: String(formData.get("cover_image") || "") || null,
     hero_image: String(formData.get("hero_image") || "") || null,
     services: String(formData.get("services") || "").split(",").map((x) => x.trim()).filter(Boolean),
-    published: formData.get("published") === "on",
+    published: id ? formData.get("published") === "on" : true,
     featured: formData.get("featured") === "on",
     homepage_featured: formData.get("homepage_featured") === "on",
     sort_order: Number(formData.get("sort_order") || 0),

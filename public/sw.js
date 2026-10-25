@@ -1,18 +1,20 @@
-const CACHE_NAME = "mrs-shell-v1";
+const CACHE_PREFIX = "mrs-shell-";
+const CACHE_NAME = "mrs-shell-v2";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add("/")));
+  event.waitUntil(Promise.resolve());
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request).then((cached) => cached || caches.match("/"))));
-});
+// Intentionally no fetch handler: all site assets stay on the normal Vercel/CDN path.
 
 self.addEventListener("push", (event) => {
   let data = {};
@@ -32,12 +34,14 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = new URL(event.notification.data?.url || "/admin/dashboard?section=messages", self.location.origin).href;
-  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-    const existing = clients.find((client) => "focus" in client);
-    if (existing) {
-      existing.navigate(target);
-      return existing.focus();
-    }
-    return self.clients.openWindow(target);
-  }));
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((client) => "focus" in client);
+      if (existing) {
+        existing.navigate(target);
+        return existing.focus();
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });

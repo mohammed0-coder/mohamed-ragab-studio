@@ -42,6 +42,7 @@
     "pre-v4-full-backup",
     "pre-v5-backup",
     "mrs-v9-security-inbox-pwa.patch",
+    "mrs-v9.1-performance-hotfix",
     "mrs-v3-stability-patch",
     "mrs-v4-final-patch",
     "mrs-v5-layout-motion-patch"

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdmins } from "@/lib/push";
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const { data: saved, error: saveError } = await db.from("contact_messages").insert({ name, email, phone, company, job_title: jobTitle, project_type: projectType, message, status: "new" }).select("id").single();
     if (saveError || !saved) return NextResponse.json({ error: "تعذر حفظ رسالتك الآن. حاول مرة أخرى." }, { status: 500 });
 
-    await notifyAdmins(`رسالة جديدة من ${name}`, `${message.slice(0, 120)}${message.length > 120 ? "…" : ""}`, saved.id);
+    after(() => notifyAdmins(`رسالة جديدة من ${name}`, `${message.slice(0, 120)}${message.length > 120 ? "…" : ""}`, saved.id));
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "تعذر إرسال الرسالة الآن. حاول مرة أخرى." }, { status: 500 });

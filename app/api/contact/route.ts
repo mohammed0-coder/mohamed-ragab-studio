@@ -1,72 +1,48 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { createPublicClient } from "@/lib/supabase/public";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdmins } from "@/lib/push";
 
-const requestWindows = new Map<string, { count: number; until: number }>();
+const MAX_BODY_BYTES = 32 * 1024;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const stripControls = (value: string) => value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim();
+const hashKey = (value: string) => createHash("sha256").update(value).digest("hex");
 
 export async function POST(request: Request) {
   try {
+    const length = Number(request.headers.get("content-length") || 0);
+    if (length && length > MAX_BODY_BYTES) return NextResponse.json({ error: "الرسالة أكبر من الحد المسموح." }, { status: 413 });
+
     const body = await request.json() as Record<string, unknown>;
-    if (typeof body.website === "string" && body.website) return NextResponse.json({ ok: true });
+    if (typeof body.website === "string" && body.website.trim()) return NextResponse.json({ ok: true });
 
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const now = Date.now();
-    const window = requestWindows.get(ip);
-    if (window && window.until > now && window.count >= 5) {
-      return NextResponse.json({ error: "تم إرسال طلبات كثيرة. حاول لاحقًا." }, { status: 429 });
-    }
-    if (!window || window.until < now) requestWindows.set(ip, { count: 1, until: now + 60 * 60 * 1000 });
-    else window.count += 1;
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip")?.trim() || "unknown";
+    const ipKey = hashKey(`ip:${ip}`);
+    const email = typeof body.email === "string" ? stripControls(body.email).slice(0, 254) : "";
+    const db = createAdminClient();
+    if (!db) return NextResponse.json({ error: "تعذر حفظ الرسالة الآن. حاول مرة أخرى لاحقًا." }, { status: 503 });
 
-    const name = typeof body.name === "string" ? body.name.trim().slice(0, 120) : "";
-    const email = typeof body.email === "string" ? body.email.trim().slice(0, 254) : "";
-    const message = typeof body.message === "string" ? body.message.trim().slice(0, 5000) : "";
-    if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || message.length < 10) {
-      return NextResponse.json({ error: "تحقق من الحقول المطلوبة وحاول مرة أخرى." }, { status: 400 });
+    const { data: allowedByIp, error: rateError } = await db.rpc("consume_contact_rate_limit", { p_key_hash: ipKey, p_limit: 2, p_window_seconds: 60 });
+    if (rateError || allowedByIp !== true) return NextResponse.json({ error: "تم إرسال رسائل كثيرة خلال دقيقة واحدة. حاول بعد قليل." }, { status: 429 });
+    if (email) {
+      const { data: allowedByEmail } = await db.rpc("consume_contact_rate_limit", { p_key_hash: hashKey(`email:${email.toLowerCase()}`), p_limit: 5, p_window_seconds: 600 });
+      if (allowedByEmail !== true) return NextResponse.json({ error: "تم تجاوز الحد المؤقت لهذا البريد. حاول لاحقًا." }, { status: 429 });
     }
 
-    const db = createPublicClient();
-    if (db) {
-      const { error: saveError } = await db.from("contact_messages").insert({
-        name,
-        email,
-        phone: String(body.phone || "").slice(0, 40),
-        company: String(body.company || "").slice(0, 120),
-        job_title: String(body.job_title || "").slice(0, 120),
-        project_type: String(body.project_type || "").slice(0, 120),
-        message,
-        status: "new",
-      });
-      if (saveError) console.error("[contact] save message", saveError.message);
-    }
+    const name = typeof body.name === "string" ? stripControls(body.name).slice(0, 120) : "";
+    const message = typeof body.message === "string" ? stripControls(body.message).slice(0, 5000) : "";
+    const phone = typeof body.phone === "string" ? stripControls(body.phone).slice(0, 40) : "";
+    const company = typeof body.company === "string" ? stripControls(body.company).slice(0, 120) : "";
+    const jobTitle = typeof body.job_title === "string" ? stripControls(body.job_title).slice(0, 120) : "";
+    const projectType = typeof body.project_type === "string" ? stripControls(body.project_type).slice(0, 120) : "";
+    if (name.length < 2 || !emailPattern.test(email) || message.length < 10) return NextResponse.json({ error: "تحقق من الحقول المطلوبة وحاول مرة أخرى." }, { status: 400 });
 
-    const accessKey = process.env.WEB3FORMS_ACCESS_KEY?.trim();
-    if (!accessKey || accessKey === "#") {
-      return NextResponse.json({ code: "web3forms_not_configured" }, { status: 503 });
-    }
+    const { data: saved, error: saveError } = await db.from("contact_messages").insert({ name, email, phone, company, job_title: jobTitle, project_type: projectType, message, status: "new" }).select("id").single();
+    if (saveError || !saved) return NextResponse.json({ error: "تعذر حفظ رسالتك الآن. حاول مرة أخرى." }, { status: 500 });
 
-    const response = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        access_key: accessKey,
-        subject: `رسالة جديدة من ${name}`,
-        from_name: "موقع محمد رجب",
-        name,
-        email,
-        phone: String(body.phone || "").slice(0, 40),
-        company: String(body.company || "").slice(0, 120),
-        job_title: String(body.job_title || "").slice(0, 120),
-        project_type: String(body.project_type || "").slice(0, 120),
-        message,
-      }),
-      signal: AbortSignal.timeout(12_000),
-    });
-    const result = await response.json() as { success?: boolean; message?: string };
-    if (!response.ok || !result.success) {
-      return NextResponse.json({ error: "تعذر إرسال رسالتك الآن. حاول مرة أخرى." }, { status: 502 });
-    }
+    await notifyAdmins(`رسالة جديدة من ${name}`, `${message.slice(0, 120)}${message.length > 120 ? "…" : ""}`, saved.id);
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "تعذر الاتصال بخدمة إرسال الرسائل. حاول مرة أخرى." }, { status: 502 });
+    return NextResponse.json({ error: "تعذر إرسال الرسالة الآن. حاول مرة أخرى." }, { status: 500 });
   }
 }

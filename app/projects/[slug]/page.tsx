@@ -6,6 +6,7 @@ import type { Project } from "@/lib/types";
 import { ContentText, T } from "@/components/language";
 import { ProjectGallery } from "@/components/project-gallery";
 import { ProjectShare } from "@/components/project-share";
+import { ProjectWebsitePreview } from "@/components/project-website-preview";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -89,10 +90,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
 
-        {/* Gallery carousel with hidden scrollbar */}
-        {!!galleryImages.length && <section className="project-gallery-acadio" aria-label="Project gallery">
-          <ProjectGallery images={galleryImages} projectTitle={project.title} />
-        </section>}
+        {project.category === "Software Development" && (project.showcase_url || project.external_url) ? (
+          <ProjectWebsitePreview url={project.showcase_url || project.external_url || ""} title={project.title} thumbnail={project.cover_image || project.hero_image} />
+        ) : project.showcase_type === "website" && project.showcase_url ? (
+          <ProjectWebsitePreview url={project.showcase_url} title={project.title} thumbnail={project.cover_image || project.hero_image} />
+        ) : project.showcase_type === "external" && (project.showcase_url || project.external_url) ? (
+          <section className="project-external-showcase"><span className="eyebrow"><T ar="عرض خارجي" en="External showcase" /></span><h3><T ar="شاهد العمل كاملًا" en="View the full project" /></h3><p><T ar="يمكنك فتح المشروع على المنصة الخارجية المرتبطة بهذا العمل." en="Open the full work on the external platform linked to this project." /></p><a className="share-btn" href={project.showcase_url || project.external_url || "#"} target="_blank" rel="noreferrer"><T ar="فتح المشروع ↗" en="Open project ↗" /></a></section>
+        ) : !!galleryImages.length ? <section className="project-gallery-acadio" aria-label="Project gallery"><ProjectGallery images={galleryImages} projectTitle={project.title} /></section> : null}
 
         <div className="project-nav acadio-project-nav"><Link href="/projects">← <T ar="جميع المشاريع" en="All projects" /></Link>{all.length > 1 && <Link href={`/projects/${all[(index + 1) % all.length].slug}`}><T ar="المشروع التالي:" en="Next project:" /> <ContentText ar={all[(index + 1) % all.length].title} /> ↙</Link>}</div>
       </section>

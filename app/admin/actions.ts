@@ -49,6 +49,16 @@ export async function saveProject(formData: FormData): Promise<void> {
   const category = PROJECT_CATEGORIES.includes(requestedCategory as (typeof PROJECT_CATEGORIES)[number]) ? requestedCategory : "Other";
   const requestedTheme = String(formData.get("theme") || "red");
   const theme = PROJECT_THEMES.includes(requestedTheme as (typeof PROJECT_THEMES)[number]) ? requestedTheme : "red";
+  const requestedShowcase = String(formData.get("showcase_type") || "gallery");
+  const showcaseType = category === "Software Development" ? "website" : ["gallery", "website", "external"].includes(requestedShowcase) ? requestedShowcase : "gallery";
+  const rawShowcaseUrl = String(formData.get("showcase_url") || "").trim();
+  let showcaseUrl: string | null = null;
+  if (rawShowcaseUrl) {
+    try {
+      const parsed = new URL(rawShowcaseUrl);
+      showcaseUrl = parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
+    } catch { showcaseUrl = null; }
+  }
   const introTextAr = String(formData.get("intro_text_ar") || "").trim() || null;
   const introTextEn = String(formData.get("intro_text_en") || "").trim() || null;
   if (title.length < 2 || slug.length < 2) redirect("/admin/dashboard?error=invalid-project");
@@ -76,6 +86,9 @@ export async function saveProject(formData: FormData): Promise<void> {
     featured: formData.get("featured") === "on",
     homepage_featured: formData.get("homepage_featured") === "on",
     theme,
+    showcase_type: showcaseType as Project["showcase_type"],
+    showcase_url: showcaseUrl,
+    external_url: showcaseUrl,
     sort_order: Number(formData.get("sort_order") || 0),
   };
 
@@ -171,3 +184,40 @@ export async function deleteProject(id: string) {
 }
 
 export async function logout() { const db = await createClient(); await db?.auth.signOut(); redirect("/admin"); }
+
+
+export async function createMessageGroup(formData: FormData) {
+  const db = await adminClient();
+  if (!db) redirect("/admin");
+  const name = String(formData.get("name") || "").trim().slice(0, 80);
+  const color = String(formData.get("color") || "#7c1e2d").trim();
+  if (!name || !/^#[0-9a-fA-F]{6}$/.test(color)) redirect("/admin/dashboard?section=messages&status=invalid-group");
+  await db.from("message_groups").insert({ name, color });
+  revalidatePath("/admin/dashboard");
+  redirect("/admin/dashboard?section=messages&status=group-created");
+}
+
+export async function addMessageToGroup(messageId: string, groupId: string) {
+  const db = await adminClient();
+  if (!db) redirect("/admin");
+  if (!messageId || !groupId) return;
+  await db.from("message_group_members").upsert({ message_id: messageId, group_id: groupId }, { onConflict: "group_id,message_id" });
+  revalidatePath("/admin/dashboard");
+  redirect(`/admin/dashboard?section=messages&message=${encodeURIComponent(messageId)}`);
+}
+
+export async function removeMessageFromGroup(messageId: string, groupId: string) {
+  const db = await adminClient();
+  if (!db) redirect("/admin");
+  await db.from("message_group_members").delete().eq("message_id", messageId).eq("group_id", groupId);
+  revalidatePath("/admin/dashboard");
+  redirect(`/admin/dashboard?section=messages&message=${encodeURIComponent(messageId)}`);
+}
+
+export async function deleteMessageGroup(groupId: string) {
+  const db = await adminClient();
+  if (!db) redirect("/admin");
+  await db.from("message_groups").delete().eq("id", groupId);
+  revalidatePath("/admin/dashboard");
+  redirect("/admin/dashboard?section=messages&status=group-deleted");
+}

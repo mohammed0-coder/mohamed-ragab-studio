@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { deleteClient, deleteMessage, deleteProject, deleteService, duplicateProject, logout, saveClient, saveProject, saveService, saveSettings, updateMessage } from "@/app/admin/actions";
-import type { Client, ContactMessage, Project, Service } from "@/lib/types";
+import { addMessageToGroup, createMessageGroup, deleteClient, deleteMessage, deleteMessageGroup, deleteProject, deleteService, duplicateProject, logout, removeMessageFromGroup, saveClient, saveProject, saveService, saveSettings, updateMessage } from "@/app/admin/actions";
+import type { Client, ContactMessage, MessageGroup, Project, Service } from "@/lib/types";
 import { AdminDeleteButton } from "@/components/admin-delete";
 import { AdminUploader } from "@/components/admin-uploader";
 import { AdminGalleryUploader } from "@/components/admin-gallery-uploader";
@@ -10,6 +10,8 @@ import { AdminFlash } from "@/components/admin-flash";
 import { PUBLIC_SETTING_KEYS, getSiteSettings } from "@/lib/site-settings";
 import { getAnalyticsSummary, type AnalyticsPeriod } from "@/lib/analytics";
 import { PROJECT_CATEGORIES } from "@/lib/project-categories";
+import { AdminMessageCenter } from "@/components/admin-message-center";
+import { AdminNotifications } from "@/components/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,7 @@ const labels: Record<string, string> = {
   social_whatsapp: "WhatsApp",
   social_linkedin: "LinkedIn",
   social_x: "X",
+  social_behance: "Behance",
   footer_text: "نص الفوتر",
 };
 
@@ -50,7 +53,7 @@ function CategorySelect({ value, required = false }: { value?: string; required?
   </select>;
 }
 
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ analytics?: string; section?: string }> }) {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ analytics?: string; section?: string; message?: string }> }) {
   const db = await createClient();
   if (!db) redirect("/admin");
   const { data: { user } } = await db.auth.getUser();
@@ -66,6 +69,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   let clients: Client[] = [];
   let services: Service[] = [];
   let messages: ContactMessage[] = [];
+  let messageGroups: MessageGroup[] = [];
+  let messageGroupMembers: { message_id: string; group_id: string }[] = [];
   let settings: Record<string, string> = {};
   let analytics: Awaited<ReturnType<typeof getAnalyticsSummary>> = null;
   let totalProjects = 0;
@@ -111,8 +116,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     const { data } = await db.from("services").select("*").order("sort_order");
     services = (data || []) as Service[];
   } else if (activeSection === "messages") {
-    const { data } = await db.from("contact_messages").select("*").order("created_at", { ascending: false });
-    messages = (data || []) as ContactMessage[];
+    const [messageResult, groupResult, memberResult] = await Promise.all([
+      db.from("contact_messages").select("*").order("created_at", { ascending: false }),
+      db.from("message_groups").select("*").order("created_at", { ascending: true }),
+      db.from("message_group_members").select("message_id,group_id"),
+    ]);
+    messages = (messageResult.data || []) as ContactMessage[];
+    messageGroups = (groupResult.data || []) as MessageGroup[];
+    messageGroupMembers = (memberResult.data || []) as { message_id: string; group_id: string }[];
     newMessages = messages.filter((message) => message.status === "new").length;
   } else if (activeSection === "settings") {
     settings = await getSiteSettings();
@@ -137,7 +148,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <div className="admin-main" data-admin-section={activeSection}>
       <header className="admin-topbar">
         <div><span className="eyebrow">Studio CMS / CMS</span><h1>{sectionTitles[activeSection]}</h1></div>
-        <div className="admin-user">{user.email}</div>
+        <div className="admin-topbar-actions"><AdminNotifications /><div className="admin-user">{user.email}</div></div>
       </header>
 
       <section id="overview" className="admin-view-section admin-view-overview admin-overview">
@@ -174,7 +185,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="admin-section-heading"><div><span className="eyebrow">02 / المحتوى</span><h2>المشاريع</h2></div><a href="?section=projects#new-project" className="admin-inline-cta">+ مشروع جديد</a></div>
         <details id="new-project" className="admin-editor" open>
           <summary><strong>إضافة مشروع جديد</strong><span>معلومات أساسية ← المحتوى ← الصور ← النشر</span></summary>
-          <form action={saveProject} className="admin-form admin-form-large">
+          <form action={saveProject} className="admin-form admin-form-large project-editor">
             <Field label="عنوان المشروع" hint="الاسم الذي سيظهر للزائر."><input name="title" required /></Field>
             <Field label="الرابط المختصر" hint="حروف إنجليزية فقط، مثل nawa."><input name="slug" required /></Field>
             <Field label="اسم العميل" hint="اسم الشركة أو العميل الظاهر في بطاقة المشروع."><input name="client_name" /></Field>
@@ -189,9 +200,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <Field label="Project intro — English" hint="English version shown in the project details page." className="field-span"><textarea name="intro_text_en" rows={5} /></Field>
             <div className="admin-theme-picker field-span"><span className="admin-field-label">ثيم صفحة المشروع</span><div className="admin-theme-options">{projectThemes.map((theme) => <label key={theme.value} className="admin-theme-option"><input type="radio" name="theme" value={theme.value} defaultChecked={theme.value === "red"} /><span className="admin-theme-swatch" style={{ background: theme.swatch }} /><span>{theme.label}</span></label>)}</div></div>
             <Field label="تاريخ البداية"><input name="start_date" type="date" /></Field>
+            <Field label="نوع عرض المشروع" hint="معرض صور، موقع حي، أو رابط خارجي مثل Behance."><select name="showcase_type" defaultValue="gallery"><option value="gallery">معرض صور</option><option value="website">موقع حي</option><option value="external">رابط خارجي</option></select></Field>
+            <Field label="رابط العرض" hint="للموقع الحي أو الرابط الخارجي."><input name="showcase_url" type="url" placeholder="https://..." /></Field>
             <Field label="تاريخ النهاية"><input name="end_date" type="date" /></Field>
             <Field label="ترتيب العرض"><input name="sort_order" type="number" defaultValue="0" /></Field>
-            <div className="admin-upload-group"><strong>صور المشروع</strong><p>ارفع صورة الغلاف، الصورة الرئيسية، ثم صور المعرض. لا تحتاج إلى نسخ روابط طويلة يدويًا.</p><label className="admin-field"><span className="admin-field-label">صورة الغلاف</span><input name="cover_image" /></label><AdminUploader fieldName="cover_image" bucket="project-images" folder="projects" /><label className="admin-field"><span className="admin-field-label">الصورة الرئيسية</span><input name="hero_image" /></label><AdminUploader fieldName="hero_image" bucket="project-images" folder="projects" /><Field label="روابط صور المعرض" hint="صورة في كل سطر." className="field-span"><textarea name="gallery_images" rows={4} id="gallery-new" /></Field><AdminGalleryUploader fieldId="gallery-new" /></div>
+            <div className="admin-upload-group project-image-upload-fields"><strong>صور المشروع</strong><p>ارفع صورة الغلاف، الصورة الرئيسية، ثم صور المعرض. لا تحتاج إلى نسخ روابط طويلة يدويًا.</p><label className="admin-field"><span className="admin-field-label">صورة الغلاف</span><input name="cover_image" /></label><AdminUploader fieldName="cover_image" bucket="project-images" folder="projects" /><label className="admin-field"><span className="admin-field-label">الصورة الرئيسية</span><input name="hero_image" /></label><AdminUploader fieldName="hero_image" bucket="project-images" folder="projects" /><Field label="روابط صور المعرض" hint="صورة في كل سطر." className="field-span"><textarea name="gallery_images" rows={4} id="gallery-new" /></Field><AdminGalleryUploader fieldId="gallery-new" /></div>
             <div className="admin-checks"><label><input type="checkbox" name="published" defaultChecked /> منشور على الموقع</label><label><input type="checkbox" name="featured" /> مميز</label><label><input type="checkbox" name="homepage_featured" /> ضمن الأربعة الرئيسية (أول 4)</label></div>
             <div className="admin-editor-actions"><button className="admin-button" type="submit">حفظ المشروع</button></div>
           </form>
@@ -199,7 +212,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="admin-project-table">
           {projects.map((project) => <details className="admin-editor" key={project.id}>
             <summary><strong>{project.title}</strong><span>{project.published ? "منشور" : "مسودة"} · {project.category || "بدون تصنيف"}</span></summary>
-            <form action={saveProject} className="admin-form admin-form-large">
+            <form action={saveProject} className="admin-form admin-form-large project-editor">
               <input type="hidden" name="id" value={project.id} />
               <Field label="عنوان المشروع"><input name="title" defaultValue={project.title} /></Field>
               <Field label="الرابط المختصر"><input name="slug" defaultValue={project.slug} /></Field>
@@ -215,9 +228,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <Field label="Project intro — English" hint="English version shown in the project details page." className="field-span"><textarea name="intro_text_en" rows={5} defaultValue={project.intro_text_en || ""} /></Field>
               <div className="admin-theme-picker field-span"><span className="admin-field-label">ثيم صفحة المشروع</span><div className="admin-theme-options">{projectThemes.map((theme) => <label key={theme.value} className="admin-theme-option"><input type="radio" name="theme" value={theme.value} defaultChecked={(project.theme || "red") === theme.value} /><span className="admin-theme-swatch" style={{ background: theme.swatch }} /><span>{theme.label}</span></label>)}</div></div>
               <Field label="تاريخ البداية"><input name="start_date" type="date" defaultValue={project.start_date || ""} /></Field>
+              <Field label="نوع عرض المشروع" hint="تطوير برمجيات = موقع حي داخل إطار MacBook. التصاميم والفيديو يمكنها استخدام رابط خارجي."><select name="showcase_type" defaultValue={project.showcase_type || (project.category === "Software Development" ? "website" : "gallery")}><option value="gallery">معرض صور</option><option value="website">موقع حي</option><option value="external">رابط خارجي</option></select></Field>
+              <Field label="رابط العرض" hint="https://..."><input name="showcase_url" type="url" defaultValue={project.showcase_url || project.external_url || ""} /></Field>
               <Field label="تاريخ النهاية"><input name="end_date" type="date" defaultValue={project.end_date || ""} /></Field>
               <Field label="ترتيب العرض"><input name="sort_order" type="number" defaultValue={project.sort_order || 0} /></Field>
-              <div className="admin-upload-group"><strong>صور المشروع</strong><p>يمكنك استبدال صورة الغلاف أو الصورة الرئيسية أو إضافة صور جديدة للمعرض.</p><label className="admin-field"><span className="admin-field-label">صورة الغلاف</span><input name="cover_image" defaultValue={project.cover_image || ""} /></label><AdminUploader fieldName="cover_image" bucket="project-images" folder="projects" /><label className="admin-field"><span className="admin-field-label">الصورة الرئيسية</span><input name="hero_image" defaultValue={project.hero_image || ""} /></label><AdminUploader fieldName="hero_image" bucket="project-images" folder="projects" /><Field label="روابط صور المعرض" hint="صورة في كل سطر." className="field-span"><textarea name="gallery_images" rows={4} defaultValue={galleryText(project.id)} id={`gallery-${project.id}`} /></Field><AdminGalleryUploader fieldId={`gallery-${project.id}`} /></div>
+              <div className="admin-upload-group project-image-upload-fields"><strong>صور المشروع</strong><p>إذا كان المشروع «تطوير برمجيات» سيُستخدم رابط الموقع بدل صور المعرض.</p><label className="admin-field"><span className="admin-field-label">صورة الغلاف</span><input name="cover_image" defaultValue={project.cover_image || ""} /></label><AdminUploader fieldName="cover_image" bucket="project-images" folder="projects" /><label className="admin-field"><span className="admin-field-label">الصورة الرئيسية</span><input name="hero_image" defaultValue={project.hero_image || ""} /></label><AdminUploader fieldName="hero_image" bucket="project-images" folder="projects" /><Field label="روابط صور المعرض" hint="صورة في كل سطر." className="field-span"><textarea name="gallery_images" rows={4} defaultValue={galleryText(project.id)} id={`gallery-${project.id}`} /></Field><AdminGalleryUploader fieldId={`gallery-${project.id}`} /></div>
               <div className="admin-checks"><label><input type="checkbox" name="published" defaultChecked={project.published} /> منشور على الموقع</label><label><input type="checkbox" name="featured" defaultChecked={project.featured} /> مميز</label><label><input type="checkbox" name="homepage_featured" defaultChecked={project.homepage_featured} /> ضمن الأربعة الرئيسية (أول 4)</label></div>
               <div className="admin-editor-actions"><button className="admin-button" type="submit">حفظ التعديلات</button></div>
             </form>
@@ -240,14 +255,25 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
       <section id="messages" className="admin-view-section admin-view-messages admin-panel-section">
         <div className="admin-section-heading"><div><span className="eyebrow">05 / Inbox</span><h2>رسائل العملاء</h2></div><span className="admin-badge">{newMessages} جديدة</span></div>
-        <div className="admin-message-list">{messages.length ? messages.map((message) => <article className={`admin-message-card status-${message.status}`} key={message.id}><div className="admin-message-main"><div><strong>{message.name}</strong><small>{message.email} · {new Date(message.created_at).toLocaleDateString("ar-EG")}</small></div><span className="admin-status">{message.status}</span></div><p>{message.message}</p><div className="admin-message-meta">{message.phone || "بدون هاتف"} · {message.company || "بدون شركة"} · {message.project_type || "بدون نوع خدمة"}</div><div className="admin-editor-actions"><a className="admin-button admin-secondary" href={`mailto:${message.email}?subject=${encodeURIComponent("رد على رسالتك — Mohamed Ragab Studio")}`}>رد عبر البريد ↗</a>{message.status !== "read" && <form action={updateMessage.bind(null, message.id, "read")}><button className="admin-button admin-secondary" type="submit">تمت القراءة</button></form>}{message.status !== "archived" && <form action={updateMessage.bind(null, message.id, "archived")}><button className="admin-button admin-secondary" type="submit">أرشفة</button></form>}<AdminDeleteButton action={deleteMessage.bind(null, message.id)} /></div></article>) : <p className="admin-empty">لا توجد رسائل محفوظة حتى الآن.</p>}</div>
+        <AdminMessageCenter
+          messages={messages}
+          groups={messageGroups}
+          memberships={messageGroupMembers}
+          createGroup={createMessageGroup}
+          deleteGroup={deleteMessageGroup}
+          addToGroup={addMessageToGroup}
+          removeFromGroup={removeMessageFromGroup}
+          updateMessage={updateMessage}
+          deleteMessage={deleteMessage}
+          initialMessageId={params.message}
+        />
       </section>
 
       <section id="settings" className="admin-view-section admin-view-settings admin-panel-section">
         <div className="admin-section-heading"><div><span className="eyebrow">06 / النظام</span><h2>إعدادات الموقع</h2></div></div>
         <form action={saveSettings} className="admin-form settings-form">
           {PUBLIC_SETTING_KEYS.map((key) => <Field label={labels[key]} key={key}>{key === "footer_text" ? <textarea name={key} rows={3} defaultValue={settings[key]} /> : <input name={key} defaultValue={settings[key]} />}</Field>)}
-          <div className="admin-security-note"><strong>مفتاح Web3Forms</strong><p>لن نخزن المفتاح السري داخل قاعدة البيانات أو لوحة عامة. ضع WEB3FORMS_ACCESS_KEY في Vercel Environment Variables، ويمكنك تغيير المفتاح من إعدادات المشروع هناك بدون كشفه للزوار.</p></div>
+          <div className="admin-security-note"><strong>الحماية والرسائل</strong><p>الرسائل تُحفظ في Supabase فقط، ومفتاح الكتابة الداخلي لا يُرسل للمتصفح. نظام الحماية يحد الإرسال إلى رسالتين لكل عنوان شبكة خلال دقيقة مع حد إضافي للبريد نفسه، كما أن الإشعارات تعمل عبر Web Push للأدمن.</p></div>
           <div className="admin-editor-actions"><button className="admin-button" type="submit">حفظ إعدادات الموقع</button></div>
         </form>
       </section>

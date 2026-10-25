@@ -1,6 +1,7 @@
 export const PROJECT_CATEGORIES = [
   "Brand Identity",
   "Web Development",
+  "Software Development",
   "Graphic Design",
   "Social Media Design",
   "Motion Graphics",

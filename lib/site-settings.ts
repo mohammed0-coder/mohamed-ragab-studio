@@ -10,7 +10,6 @@ export const PUBLIC_SETTING_KEYS = [
   "social_whatsapp",
   "social_linkedin",
   "social_x",
-  "social_behance",
   "footer_text",
 ] as const;
 
@@ -26,7 +25,6 @@ const defaults: SiteSettings = {
   social_whatsapp: "",
   social_linkedin: "",
   social_x: "",
-  social_behance: "",
   footer_text: "نصنع حضورًا يستحق أن يُرى.",
 };
 

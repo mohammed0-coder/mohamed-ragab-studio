@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const company = typeof body.company === "string" ? stripControls(body.company).slice(0, 120) : "";
     const jobTitle = typeof body.job_title === "string" ? stripControls(body.job_title).slice(0, 120) : "";
     const projectType = typeof body.project_type === "string" ? stripControls(body.project_type).slice(0, 120) : "";
-    if (name.length < 2 || !emailPattern.test(email) || message.length < 10) return NextResponse.json({ error: "تحقق من الحقول المطلوبة وحاول مرة أخرى." }, { status: 400 });
+    if (!name || !emailPattern.test(email) || !message) return NextResponse.json({ error: "تحقق من الحقول المطلوبة وحاول مرة أخرى." }, { status: 400 });
 
     const { data: saved, error: saveError } = await db.from("contact_messages").insert({ name, email, phone, company, job_title: jobTitle, project_type: projectType, message, status: "new" }).select("id").single();
     if (saveError || !saved) return NextResponse.json({ error: "تعذر حفظ رسالتك الآن. حاول مرة أخرى." }, { status: 500 });

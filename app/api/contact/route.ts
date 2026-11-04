@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const ipKey = hashKey(`ip:${ip}`);
     const email = typeof body.email === "string" ? stripControls(body.email).slice(0, 254) : "";
     const db = createAdminClient();
-    if (!db) return NextResponse.json({ error: "تعذر حفظ الرسالة الآن. حاول مرة أخرى لاحقًا." }, { status: 503 });
+    if (!db) return NextResponse.json({ error: "خدمة الرسائل غير مهيأة على الخادم حاليًا. أعد ضبط مفتاح Supabase السري في Vercel ثم حاول مرة أخرى." }, { status: 503 });
 
     const { data: allowedByIp, error: rateError } = await db.rpc("consume_contact_rate_limit", { p_key_hash: ipKey, p_limit: 2, p_window_seconds: 60 });
     if (rateError || allowedByIp !== true) return NextResponse.json({ error: "تم إرسال رسائل كثيرة خلال دقيقة واحدة. حاول بعد قليل." }, { status: 429 });

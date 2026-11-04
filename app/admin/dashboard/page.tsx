@@ -12,6 +12,8 @@ import { getAnalyticsSummary, type AnalyticsPeriod } from "@/lib/analytics";
 import { PROJECT_CATEGORIES } from "@/lib/project-categories";
 import { AdminMessageCenter } from "@/components/admin-message-center";
 import { AdminNotifications } from "@/components/admin-notifications";
+import { AdminPendingProgress } from "@/components/admin-pending-progress";
+import { AdminThemeToggle } from "@/components/admin-theme-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -134,10 +136,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   return <main className="admin-dashboard-shell">
     <AdminOnboarding />
     <AdminFlash />
+    <AdminPendingProgress />
     <aside className="admin-sidebar">
       <a className="admin-sidebar-brand" href="/">{["light","dark"].map((theme) => <img key={theme} className={`admin-brand-logo admin-brand-logo-${theme}`} src={theme === "dark" ? "/brand/MRS_White_Horizontal.png" : "/brand/MRS_Black_Horizontal.png"} alt="Mohamed Ragab Studio" />)}</a>
       <nav aria-label="Admin navigation">
-        {allowedSections.map((key) => <a key={key} className={activeSection === key ? "is-active" : ""} href={`?section=${key}`}>{sectionTitles[key]}{key === "messages" && newMessages > 0 && <b>{newMessages}</b>}</a>)}
+        {allowedSections.map((key) => <a key={key} className={activeSection === key ? "is-active" : ""} href={`?section=${key}`}>{sectionTitles[key]}{key === "messages" && newMessages > 0 && <b>{newMessages}</b>}</a>)}<a href="/admin/team">الفريق</a>
       </nav>
       <div className="admin-sidebar-bottom">
         <a href="/" target="_blank" rel="noreferrer">زيارة الموقع ↗</a>
@@ -148,7 +151,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <div className="admin-main" data-admin-section={activeSection}>
       <header className="admin-topbar">
         <div><span className="eyebrow">Studio CMS / CMS</span><h1>{sectionTitles[activeSection]}</h1></div>
-        <div className="admin-topbar-actions"><AdminNotifications /><div className="admin-user">{user.email}</div></div>
+        <div className="admin-topbar-actions"><AdminThemeToggle /><AdminNotifications /><div className="admin-user">{user.email}</div></div>
       </header>
 
       <section id="overview" className="admin-view-section admin-view-overview admin-overview">
@@ -165,7 +168,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <a href="?section=services"><strong>الخدمات</strong><span>تعديل الخدمات وترتيبها</span></a>
         <a href="?section=messages"><strong>الرسائل</strong><span>{newMessages} رسائل جديدة</span></a>
         <a href="?section=analytics"><strong>التحليلات</strong><span>اليوم · أسبوع · شهر · سنة</span></a>
-        <a href="?section=settings"><strong>إعدادات الموقع</strong><span>التواصل والسوشيال والفوتر</span></a>
+        <a href="?section=settings"><strong>إعدادات الموقع</strong><span>التواصل والسوشيال والفوتر</span></a><a href="/admin/team"><strong>الفريق</strong><span>الأشخاص والصور والبيانات</span></a>
       </section>
       <section id="analytics" className="admin-view-section admin-view-analytics admin-panel-section admin-analytics-panel">
         <div className="admin-section-heading"><div><span className="eyebrow">01 / الأداء</span><h2>زوار الموقع</h2></div><div className="analytics-periods">{(Object.keys(periodLabels) as AnalyticsPeriod[]).map((key) => <a className={key === period ? "is-active" : ""} href={`?section=analytics&analytics=${key}`} key={key}>{periodLabels[key]}</a>)}</div></div>

@@ -13,3 +13,5 @@ export type Service = { id: string; number: string; title: string; description: 
 export type ContactMessage = { id:string; name:string; email:string; phone:string; company:string; job_title:string; project_type:string; message:string; status:"new"|"read"|"archived"; created_at:string };
 export type MessageGroup = { id:string; name:string; color:string; created_at?:string };
 export type SiteSetting = { key:string; value:{text?:string}; updated_at:string };
+
+export type TeamMember={id:string;name_ar:string;name_en:string;role_ar:string;role_en:string;bio_ar:string;bio_en:string;image_url?:string|null;email?:string|null;phone?:string|null;website_url?:string|null;linkedin_url?:string|null;instagram_url?:string|null;sort_order?:number;visible?:boolean;created_at?:string;updated_at?:string};

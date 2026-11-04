@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="route-skeleton"><div className="skeleton-block skeleton-eyebrow"/><div className="skeleton-block skeleton-title"/><div className="skeleton-block skeleton-copy"/><div className="skeleton-grid"><div className="skeleton-card"/><div className="skeleton-card"/><div className="skeleton-card"/></div></main>}

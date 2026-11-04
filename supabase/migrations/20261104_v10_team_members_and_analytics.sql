@@ -1,0 +1,6 @@
+-- V10 mirror migration. Already applied to production Supabase.
+create table if not exists public.team_members(id uuid primary key default gen_random_uuid(),name_ar text not null,name_en text not null,role_ar text not null default '',role_en text not null default '',bio_ar text not null default '',bio_en text not null default '',image_url text,email text,phone text,website_url text,linkedin_url text,instagram_url text,sort_order integer not null default 0,visible boolean not null default true,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+alter table public.team_members enable row level security;
+drop policy if exists "public can read visible team members" on public.team_members;create policy "public can read visible team members" on public.team_members for select to anon,authenticated using (visible=true);
+drop policy if exists "admin manage team members" on public.team_members;create policy "admin manage team members" on public.team_members for all to authenticated using ((auth.jwt()->'app_metadata'->>'role')='admin') with check ((auth.jwt()->'app_metadata'->>'role')='admin');
+grant select on public.team_members to anon,authenticated;grant insert,update,delete on public.team_members to authenticated;

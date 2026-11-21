@@ -1,19 +1,30 @@
 import type { Metadata } from "next";
 import { PageIntro } from "@/components/site";
 import { T } from "@/components/language";
+import { getCmsPage } from "@/lib/cms";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { TeamMember } from "@/lib/types";
 
-export const metadata: Metadata={title:"من نحن",description:"Mohamed Ragab Studio — استوديو إبداعي للهوية والتصميم والتجارب الرقمية."};
-const fallbackTeam:TeamMember[]=[
-{id:"1",name_ar:"فريق الاستراتيجية",name_en:"Strategy Team",role_ar:"الاستراتيجية والهوية",role_en:"Strategy & Identity",bio_ar:"يحوّل الرؤى إلى اتجاه واضح للعلامة التجارية وتجربة متماسكة.",bio_en:"Turns a vision into a clear brand direction and a consistent experience.",image_url:"/images/image-placeholder.svg",sort_order:1,visible:true},
-{id:"2",name_ar:"فريق الإبداع",name_en:"Creative Team",role_ar:"الإبداع والتصميم",role_en:"Creative & Design",bio_ar:"يبني أفكارًا بصرية تترجم شخصية العلامة إلى لغة يمكن تذكرها.",bio_en:"Creates visual ideas that translate a brand’s character into a memorable language.",image_url:"/images/image-placeholder.svg",sort_order:2,visible:true},
-{id:"3",name_ar:"فريق التطوير",name_en:"Development Team",role_ar:"التطوير الرقمي",role_en:"Digital Development",bio_ar:"يصمم ويطوّر تجارب رقمية سهلة الاستخدام وجاهزة للنمو.",bio_en:"Designs and builds digital experiences that are easy to use and ready to grow.",image_url:"/images/image-placeholder.svg",sort_order:3,visible:true},
-{id:"4",name_ar:"فريق الإنتاج",name_en:"Production Team",role_ar:"الإنتاج والمحتوى",role_en:"Production & Content",bio_ar:"ينتج محتوى مرئيًا وسردًا متماسكًا يمنح الفكرة حضورًا عبر القنوات.",bio_en:"Produces visual content and clear storytelling that gives ideas presence across channels.",image_url:"/images/image-placeholder.svg",sort_order:4,visible:true},
-];
-export default async function About(){const db=createPublicClient();const {data}=db?await db.from("team_members").select("*").eq("visible",true).order("sort_order").order("created_at"):{data:null};const team=((data||[]) as TeamMember[]).length?(data||[]) as TeamMember[]:fallbackTeam;return <>
-<PageIntro kicker="استوديو إبداعي مستقل" title="نصنع الفرق عندما تتحول الفكرة إلى حضور." description="نقرب بين الاستراتيجية والإبداع والتقنية لنصنع علامات وتجارب يمكن رؤيتها وفهمها وتذكرها." english={{kicker:"Independent creative studio",title:"We make the difference when ideas become presence.",description:"We connect strategy, creativity, and technology to build brands and experiences people can see, understand, and remember."}}/>
-<section className="content-wrap page-section about-v10-intro" id="content"><div className="about-v10-statement"><span className="eyebrow">01 / <T ar="فكرتنا" en="Our idea"/></span><h2><T ar={<>الإبداع عندنا ليس طبقة فوق الفكرة؛ <span>هو الطريقة التي تصل بها الفكرة.</span></>} en={<>Creativity is not a layer on top of the idea; <span>it is how the idea gets through.</span></>}/></h2></div>
-<div className="about-v10-grid"><article><span className="eyebrow">02 / <T ar="الاستراتيجية" en="Strategy"/></span><h3><T ar="نبدأ بالوضوح." en="We start with clarity."/></h3><p><T ar="نفهم الجمهور والسياق والهدف قبل أن نرسم أي شكل. ثم نحول ذلك إلى اتجاه يمكن للفريق أن يعمل عليه." en="We understand the audience, context, and goal before drawing a shape. Then we turn that into a direction the team can build on."/></p></article><article><span className="eyebrow">03 / <T ar="الإبداع" en="Creative"/></span><h3><T ar="نصنع لغة يمكن تذكرها." en="We build a language people remember."/></h3><p><T ar="من الهوية إلى الحركة، نبحث عن الفكرة البصرية التي تحمل شخصية العلامة ولا تعتمد على الزخرفة فقط." en="From identity to motion, we look for the visual idea that carries the brand’s character instead of relying on decoration alone."/></p></article><article><span className="eyebrow">04 / <T ar="التقنية" en="Technology"/></span><h3><T ar="نجعل الفكرة تعمل." en="We make the idea work."/></h3><p><T ar="نبني تجارب رقمية سريعة وواضحة وقابلة للنمو، بحيث لا يتوقف التصميم عند الشاشة الأولى." en="We build digital experiences that are fast, clear, and ready to grow, so the design does not stop at the first screen."/></p></article></div>
-<div className="about-v10-people"><div className="section-head"><div><span className="eyebrow">05 / <T ar="الفريق" en="The team"/></span><h2><T ar="الأشخاص خلف العمل." en="The people behind the work."/></h2></div><p><T ar="يمكنك إدارة هذا الفريق بالكامل من لوحة الأدمن: إضافة، تعديل، صورة، ترتيب، وإخفاء." en="The team is fully manageable from the admin panel: add, edit, upload, reorder, or hide."/></p></div><div className="team-grid">{team.map(person=><article className="team-card team-card-v10" key={person.id}><div className="team-photo-wrap">{person.image_url?<img className="team-photo" src={person.image_url} alt={person.name_ar} loading="lazy"/>:<div className="team-photo team-photo-empty"/>}</div><div className="team-card-copy"><span className="team-role"><T ar={person.role_ar} en={person.role_en}/></span><h3><T ar={person.name_ar} en={person.name_en}/></h3><p><T ar={person.bio_ar} en={person.bio_en}/></p></div></article>)}</div></div>
-<div className="about-v10-close"><span className="eyebrow">06 / <T ar="كيف نعمل" en="How we work"/></span><p><T ar="نشارك مبكرًا، نختبر كثيرًا، ونبقى قريبين من التنفيذ حتى تظهر الفكرة في العالم الحقيقي." en="We share early, test often, and stay close to execution until the idea works in the real world."/></p></div></section></>;}
+export const metadata: Metadata = { title: "من نحن", description: "Mohamed Ragab Studio — استوديو إبداعي للهوية والتصميم والتجارب الرقمية." };
+
+export default async function About() {
+  const [cms, db] = await Promise.all([getCmsPage("about"), Promise.resolve(createPublicClient())]);
+  const { data } = db ? await db.from("team_members").select("*").eq("visible", true).order("sort_order").order("created_at") : { data: null };
+  const team = ((data || []) as TeamMember[]).filter(person => person.name_ar && person.role_ar && !String(person.image_url || "").includes("image-placeholder.svg"));
+  return <>
+    <PageIntro kicker={cms.kicker_ar} title={cms.title_ar} description={cms.description_ar} english={{ kicker: cms.kicker_en, title: cms.title_en, description: cms.description_en }} />
+    <section className="content-wrap page-section about-v12" id="content">
+      <div className="about-v11-statement"><span className="eyebrow"><T ar={cms.idea_label_ar} en={cms.idea_label_en} /></span><h2><T ar={cms.idea_title_ar} en={cms.idea_title_en} /></h2></div>
+      <div className="about-v11-grid">
+        <article><span className="eyebrow"><T ar="الاستراتيجية" en="Strategy" /></span><h3><T ar={cms.strategy_title_ar} en={cms.strategy_title_en} /></h3><p><T ar={cms.strategy_body_ar} en={cms.strategy_body_en} /></p></article>
+        <article><span className="eyebrow"><T ar="الإبداع" en="Creative" /></span><h3><T ar={cms.creative_title_ar} en={cms.creative_title_en} /></h3><p><T ar={cms.creative_body_ar} en={cms.creative_body_en} /></p></article>
+        <article><span className="eyebrow"><T ar="التقنية" en="Technology" /></span><h3><T ar={cms.technology_title_ar} en={cms.technology_title_en} /></h3><p><T ar={cms.technology_body_ar} en={cms.technology_body_en} /></p></article>
+      </div>
+      <div className="about-v11-people">
+        <div className="section-head"><div><span className="eyebrow"><T ar={cms.team_label_ar} en={cms.team_label_en} /></span><h2><T ar={cms.team_title_ar} en={cms.team_title_en} /></h2></div><p><T ar={cms.team_intro_ar} en={cms.team_intro_en} /></p></div>
+        {team.length ? <div className="team-grid">{team.map(person => <article className="team-card team-card-v10" key={person.id}><div className="team-photo-wrap">{person.image_url && <img className="team-photo" src={person.image_url} alt={person.name_ar} loading="lazy" />}</div><div className="team-card-copy"><span className="team-role"><T ar={person.role_ar} en={person.role_en} /></span><h3><T ar={person.name_ar} en={person.name_en} /></h3><p><T ar={person.bio_ar} en={person.bio_en} /></p></div></article>)}</div> : null}
+      </div>
+      <div className="about-v11-close"><span className="eyebrow"><T ar={cms.close_label_ar} en={cms.close_label_en} /></span><p><T ar={cms.close_body_ar} en={cms.close_body_en} /></p></div>
+    </section>
+  </>;
+}

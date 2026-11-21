@@ -1,5 +1,19 @@
-import type {Metadata} from "next";import {getServices} from "@/lib/content";import {PageIntro} from "@/components/site";import {ContentText,T} from "@/components/language";
-export const dynamic = "force-dynamic";
+import type { Metadata } from "next";
+import { getServices } from "@/lib/content";
+import { PageIntro } from "@/components/site";
+import { T } from "@/components/language";
+import { ServiceDiscovery } from "@/components/service-discovery";
 
-export const metadata:Metadata={title:"الخدمات",description:"استراتيجية وهوية وإبداع وحملات وتجارب رقمية."};
-export default async function Services(){const services=await getServices();return <><PageIntro kicker="من الاستراتيجية إلى التنفيذ" title="مهارات إبداعية، لأفكار جريئة." description="نربط بين وضوح الاستراتيجية وقوة التنفيذ لنصنع تجارب ذات معنى." english={{kicker:"From strategy to execution",title:"Creative skills for bold ideas.",description:"We connect strategic clarity with strong execution to create meaningful experiences."}}/><section className="content-wrap page-section" id="content"><div className="section-head"><div><div className="eyebrow"><T ar="ما الذي نفعله؟" en="What we do"/></div><h2><T ar={<>كل ما تحتاجه<br/>الفكرة الجيدة.</>} en={<>Everything a good<br/>idea needs.</>}/></h2></div><p><T ar="فريق واحد يجمع التفكير والتصميم والتقنية والإنتاج." en="One team bringing together strategy, design, technology, and production."/></p></div>{services.map((s,i)=><article className="numbered-service" key={s.id}><div className="number">{s.number||String(i+1).padStart(2,"0")}</div><h2><ContentText ar={s.title}/></h2><p><ContentText ar={s.description}/></p><ul>{s.items?.map((item)=><li key={item}><ContentText ar={item}/></li>)}</ul></article>)}<div className="about-statement"><T ar={<>نبدأ من <span style={{color:"var(--muted)"}}>ما تريد أن تغيّره.</span></>} en={<>We begin with <span style={{color:"var(--muted)"}}>what you want to change.</span></>}/></div></section></>}
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "الخدمات", description: "استراتيجية وهوية وإبداع وحملات وتجارب رقمية." };
+
+export default async function Services() {
+  const services = await getServices();
+  return <>
+    <PageIntro kicker="من الاستراتيجية إلى التنفيذ" title="مهارات إبداعية، لأفكار جريئة." description="استكشف ما نقدمه، ثم اختر الخدمة الأقرب إلى احتياج مشروعك." english={{ kicker: "From strategy to execution", title: "Creative skills for bold ideas.", description: "Explore what we offer, then choose the service closest to your project." }} />
+    <section className="content-wrap page-section" id="content">
+      <div className="section-head"><div><div className="eyebrow"><T ar="اكتشف خدماتنا" en="Explore our services" /></div><h2><T ar={<>اختر ما تحتاجه،<br />ثم دعنا نكمل الطريق.</>} en={<>Choose what you need,<br />then let’s take it from there.</>} /></h2></div><p><T ar="طريقة عرض أبسط، تفاصيل أوضح، وخطوة مباشرة نحو طلب الخدمة." en="A clearer presentation, useful details, and a direct path to request the service." /></p></div>
+      <ServiceDiscovery services={services} />
+    </section>
+  </>;
+}
